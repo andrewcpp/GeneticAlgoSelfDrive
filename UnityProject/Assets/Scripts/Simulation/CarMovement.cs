@@ -62,7 +62,7 @@ public class CarMovement : MonoBehaviour
 
     #region Methods
     // Unity method for physics updates
-	void FixedUpdate ()
+    void FixedUpdate()
     {
         //Get user input if controller tells us to
         if (controller != null && controller.UseUserInput)
@@ -73,7 +73,7 @@ public class CarMovement : MonoBehaviour
         ApplyVelocity();
 
         ApplyFriction();
-	}
+    }
 
     // Checks for user input
     private void CheckInput()
@@ -85,7 +85,7 @@ public class CarMovement : MonoBehaviour
     // Applies the currently set input
     private void ApplyInput()
     {
-        //Cap input 
+        // Cap input 
         if (verticalInput > 1)
             verticalInput = 1;
         else if (verticalInput < -1)
@@ -96,26 +96,26 @@ public class CarMovement : MonoBehaviour
         else if (horizontalInput < -1)
             horizontalInput = -1;
 
-        //Car can only accelerate further if velocity is lower than engineForce * MAX_VEL
+        // Car can only accelerate further if velocity is lower than engineForce * MAX_VEL
         bool canAccelerate = false;
         if (verticalInput < 0)
             canAccelerate = Velocity > verticalInput * MAX_VEL;
         else if (verticalInput > 0)
             canAccelerate = Velocity < verticalInput * MAX_VEL;
-        
-        //Set velocity
+
+        // Set velocity
         if (canAccelerate)
         {
             Velocity += (float)verticalInput * ACCELERATION * Time.deltaTime;
 
-            //Cap velocity
+            // Cap velocity
             if (Velocity > MAX_VEL)
                 Velocity = MAX_VEL;
             else if (Velocity < -MAX_VEL)
                 Velocity = -MAX_VEL;
         }
-        
-        //Set rotation
+
+        // Set rotation
         Rotation = transform.rotation;
         Rotation *= Quaternion.AngleAxis((float)-horizontalInput * TURN_SPEED * Time.deltaTime, new Vector3(0, 0, 1));
     }
@@ -155,7 +155,7 @@ public class CarMovement : MonoBehaviour
             {
                 Velocity += VEL_FRICT * Time.deltaTime;
                 if (Velocity > 0)
-                    Velocity = 0;            
+                    Velocity = 0;
             }
         }
     }

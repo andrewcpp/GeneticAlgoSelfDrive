@@ -27,7 +27,7 @@ public class UINeuralNetworkPanel : MonoBehaviour
     {
         UINeuralNetworkLayerPanel dummyLayer = Layers[0];
 
-        //Duplicate dummyLayer
+        // Duplicate dummyLayer
         for (int i = Layers.Count; i < neuralNet.Layers.Length + 1; i++)
         {
             UINeuralNetworkLayerPanel newPanel = Instantiate(dummyLayer);
@@ -35,16 +35,16 @@ public class UINeuralNetworkPanel : MonoBehaviour
             Layers.Add(newPanel);
         }
 
-        //Destory all unnecessary layers
-        for (int i = this.Layers.Count-1; i >= neuralNet.Layers.Length + 1; i++)
+        // Destory all unnecessary layers
+        for (int i = this.Layers.Count - 1; i >= neuralNet.Layers.Length + 1; i++)
         {
             UINeuralNetworkLayerPanel toBeDestroyed = Layers[i];
             Layers.RemoveAt(i);
             Destroy(toBeDestroyed);
         }
-        
-        //Set layer contents
-        for (int l = 0; l<this.Layers.Count - 1; l++)
+
+        // Set layer contents
+        for (int l = 0; l < this.Layers.Count - 1; l++)
             this.Layers[l].Display(neuralNet.Layers[l]);
 
         this.Layers[Layers.Count - 1].Display(neuralNet.Layers[neuralNet.Layers.Length - 1].OutputCount);
@@ -57,10 +57,10 @@ public class UINeuralNetworkPanel : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
 
-        //Draw node connections
+        // Draw node connections
         for (int l = 0; l < this.Layers.Count - 1; l++)
             this.Layers[l].DisplayConnections(neuralNet.Layers[l], this.Layers[l + 1]);
-        
+
         this.Layers[this.Layers.Count - 1].HideAllConnections();
 
     }

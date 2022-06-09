@@ -37,7 +37,7 @@ public class UINeuralNetworkLayerPanel : MonoBehaviour
     {
         UINeuralNetworkConnectionPanel dummyNode = Nodes[0];
 
-        //Duplicate dummyNode
+        // Duplicate dummyNode
         for (int i = Nodes.Count; i < neuronCount; i++)
         {
             UINeuralNetworkConnectionPanel newNode = Instantiate(dummyNode);
@@ -45,7 +45,7 @@ public class UINeuralNetworkLayerPanel : MonoBehaviour
             Nodes.Add(newNode);
         }
 
-        //Destory all unnecessary nodes
+        // Destory all unnecessary nodes
         for (int i = this.Nodes.Count - 1; i >= neuronCount; i++)
         {
             UINeuralNetworkConnectionPanel toBeDestroyed = Nodes[i];
@@ -61,7 +61,7 @@ public class UINeuralNetworkLayerPanel : MonoBehaviour
     /// <param name="nextLayer">The layer that the other layer is connected to.</param>
     public void DisplayConnections(NeuralLayer currentLayer, UINeuralNetworkLayerPanel nextLayer)
     {
-        for (int i = 0; i<Nodes.Count; i++)
+        for (int i = 0; i < Nodes.Count; i++)
             Nodes[i].DisplayConnections(i, currentLayer, nextLayer);
     }
 

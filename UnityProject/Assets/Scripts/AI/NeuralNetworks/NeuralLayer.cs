@@ -87,7 +87,7 @@ public class NeuralLayer
     /// </remarks>
     public void SetWeights(double[] weights)
     {
-        //Check arguments
+        // Check arguments
         if (weights.Length != this.Weights.Length)
             throw new ArgumentException("Input weights do not match layer weight count.");
 
@@ -105,13 +105,13 @@ public class NeuralLayer
     /// <returns>The calculated outputs.</returns>
     public double[] ProcessInputs(double[] inputs)
     {
-        //Check arguments
+        // Check arguments
         if (inputs.Length != NeuronCount)
             throw new ArgumentException("Given xValues do not match layer input count.");
 
-        //Calculate sum for each neuron from weighted inputs and bias
+        // Calculate sum for each neuron from weighted inputs and bias
         double[] sums = new double[OutputCount];
-        //Add bias (always on) neuron to inputs
+        // Add bias (always on) neuron to inputs
         double[] biasedInputs = new double[NeuronCount + 1];
         inputs.CopyTo(biasedInputs, 0);
         biasedInputs[inputs.Length] = 1.0;
@@ -120,7 +120,7 @@ public class NeuralLayer
             for (int i = 0; i < this.Weights.GetLength(0); i++)
                 sums[j] += biasedInputs[i] * Weights[i, j];
 
-        //Apply activation function to sum, if set
+        // Apply activation function to sum, if set
         if (NeuronActivationFunction != null)
         {
             for (int i = 0; i < sums.Length; i++)
@@ -136,14 +136,14 @@ public class NeuralLayer
     /// <returns>A deep copy of this NeuralLayer</returns>
     public NeuralLayer DeepCopy()
     {
-        //Copy weights
+        // Copy weights
         double[,] copiedWeights = new double[this.Weights.GetLength(0), this.Weights.GetLength(1)];
 
         for (int x = 0; x < this.Weights.GetLength(0); x++)
             for (int y = 0; y < this.Weights.GetLength(1); y++)
                 copiedWeights[x, y] = this.Weights[x, y];
 
-        //Create copy
+        // Create copy
         NeuralLayer newLayer = new NeuralLayer(this.NeuronCount, this.OutputCount);
         newLayer.Weights = copiedWeights;
         newLayer.NeuronActivationFunction = this.NeuronActivationFunction;
@@ -161,7 +161,7 @@ public class NeuralLayer
         double range = Math.Abs(minValue - maxValue);
         for (int i = 0; i < Weights.GetLength(0); i++)
             for (int j = 0; j < Weights.GetLength(1); j++)
-                Weights[i, j] = minValue + (randomizer.NextDouble() * range); //random double between minValue and maxValue
+                Weights[i, j] = minValue + (randomizer.NextDouble() * range); // random double between minValue and maxValue
     }
 
     /// <summary>

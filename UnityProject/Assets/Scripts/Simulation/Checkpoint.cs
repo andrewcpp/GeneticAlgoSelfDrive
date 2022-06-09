@@ -78,10 +78,10 @@ public class Checkpoint : MonoBehaviour
     /// <param name="currentDistance">The distance to this checkpoint.</param>
     public float GetRewardValue(float currentDistance)
     {
-        //Calculate how close the distance is to capturing this checkpoint, relative to the distance from the previous checkpoint
-        float completePerc = (DistanceToPrevious - currentDistance) / DistanceToPrevious; 
+        // Calculate how close the distance is to capturing this checkpoint, relative to the distance from the previous checkpoint
+        float completePerc = (DistanceToPrevious - currentDistance) / DistanceToPrevious;
 
-        //Reward according to capture percentage
+        // Reward according to capture percentage
         if (completePerc < 0)
             return 0;
         else return completePerc * RewardValue;

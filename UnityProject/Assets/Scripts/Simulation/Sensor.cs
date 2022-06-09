@@ -14,7 +14,7 @@ public class Sensor : MonoBehaviour
     // The layer this sensor will be reacting to, to be set in Unity editor.
     [SerializeField]
     private LayerMask LayerToSense;
-    //The crosshair of the sensor, to be set in Unity editor.
+    // The crosshair of the sensor, to be set in Unity editor.
     [SerializeField]
     private SpriteRenderer Cross;
 
@@ -33,32 +33,32 @@ public class Sensor : MonoBehaviour
     #endregion
 
     #region Constructors
-    void Start ()
+    void Start()
     {
         Cross.gameObject.SetActive(true);
-	}
+    }
     #endregion
 
     #region Methods
     // Unity method for updating the simulation
-    void FixedUpdate ()
+    void FixedUpdate()
     {
-        //Calculate direction of sensor
+        // Calculate direction of sensor
         Vector2 direction = Cross.transform.position - this.transform.position;
         direction.Normalize();
 
-        //Send raycast into direction of sensor
-        RaycastHit2D hit =  Physics2D.Raycast(this.transform.position, direction, MAX_DIST, LayerToSense);
+        // Send raycast into direction of sensor
+        RaycastHit2D hit = Physics2D.Raycast(this.transform.position, direction, MAX_DIST, LayerToSense);
 
-        //Check distance
+        // Check distance
         if (hit.collider == null)
             hit.distance = MAX_DIST;
         else if (hit.distance < MIN_DIST)
             hit.distance = MIN_DIST;
 
-        this.Output = hit.distance; //transform to percent of max distance
-        Cross.transform.position = (Vector2) this.transform.position + direction * hit.distance; //Set position of visual cross to current reading
-	}
+        this.Output = hit.distance; // transform to percent of max distance
+        Cross.transform.position = (Vector2)this.transform.position + direction * hit.distance; //Set position of visual cross to current reading
+    }
 
     /// <summary>
     /// Hides the crosshair of this sensor.

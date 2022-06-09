@@ -48,18 +48,18 @@ public class GameStateManager : MonoBehaviour
         }
         Instance = this;
 
-        //Load gui scene
+        // Load gui scene
         SceneManager.LoadScene("GUI", LoadSceneMode.Additive);
 
-        //Load track
+        // Load track
         SceneManager.LoadScene(TrackName, LoadSceneMode.Additive);
     }
 
-    void Start ()
+    void Start()
     {
         TrackManager.Instance.BestCarChanged += OnBestCarChanged;
         EvolutionManager.Instance.StartEvolution();
-	}
+    }
     #endregion
 
     #region Methods
@@ -70,7 +70,7 @@ public class GameStateManager : MonoBehaviour
             Camera.SetTarget(null);
         else
             Camera.SetTarget(bestCar.gameObject);
-            
+
         if (UIController != null)
             UIController.SetDisplayTarget(bestCar);
     }

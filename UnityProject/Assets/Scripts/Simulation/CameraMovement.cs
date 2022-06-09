@@ -5,7 +5,6 @@
 using UnityEngine;
 #endregion
 
-
 /// <summary>
 /// Component for simple camera target following.
 /// </summary>
@@ -47,7 +46,7 @@ public class CameraMovement : MonoBehaviour
     /// <param name="target">The target to follow.</param>
     public void SetTarget(GameObject target)
     {
-        //Set position instantly if previous target was null
+        // Set position instantly if previous target was null
         if (Target == null && !AllowUserInput && target != null)
             SetCamPosInstant(target.transform.position);
 
@@ -55,18 +54,18 @@ public class CameraMovement : MonoBehaviour
     }
 
     // Unity method for updating the simulation
-	void FixedUpdate ()
+    void FixedUpdate()
     {
-        //Check movement direction
+        // Check movement direction
         if (AllowUserInput)
             CheckUserInput();
         else if (Target != null)
             targetCamPos = Target.transform.position;
 
-        targetCamPos.z = CamZ; //Always set z to cam distance
+        targetCamPos.z = CamZ; // Always set z to cam distance
         this.transform.position = Vector3.Lerp(this.transform.position, targetCamPos, CamSpeed * Time.deltaTime); //Move camera with interpolation
 
-        //Check if out of bounds
+        // Check if out of bounds
         if (MovementBounds != null)
         {
             float vertExtent = Camera.main.orthographicSize;

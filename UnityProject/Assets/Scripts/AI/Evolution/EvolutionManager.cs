@@ -1,4 +1,4 @@
-﻿/// Author: Samuel Arzt
+﻿/// Author: Samuel Arzt, Andrew Chang
 /// Date: March 2017
 
 
@@ -42,12 +42,23 @@ public class EvolutionManager : MonoBehaviour
     private int RestartAfter = 100;
 
     // Whether to use elitist selection or remainder stochastic sampling, to be set in Unity Editor
+    // 1 = remainder stochastic sampling, 2 = default (choose top 3), 3 = clonalg
     [SerializeField]
-    private bool ElitistSelection = false;
+    private int ElitistSelection = 1;
+
+    [SerializeField]
+    private bool ReceptorEdit = false;
 
     // Topology of the agent's FNN, to be set in Unity Editor
     [SerializeField]
     private uint[] FNNTopology;
+
+    // FNN weight count
+    public static int NumberOfWeights;
+
+    public static int selectionType;
+
+    public static bool isCloned;
 
     // The current population of agents.
     private List<Agent> agents = new List<Agent>();
@@ -94,33 +105,58 @@ public class EvolutionManager : MonoBehaviour
     /// </summary>
     public void StartEvolution()
     {
-        //Create neural network to determine parameter count
+        // Create neural network to determine parameter count
         NeuralNetwork nn = new NeuralNetwork(FNNTopology);
 
-        //Setup genetic algorithm
-        geneticAlgorithm = new GeneticAlgorithm((uint) nn.WeightCount, (uint) PopulationSize);
+        NumberOfWeights = (int)nn.WeightCount;
+
+        // Setup genetic algorithm
+        geneticAlgorithm = new GeneticAlgorithm((uint)nn.WeightCount, (uint)PopulationSize);
         genotypesSaved = 0;
 
         geneticAlgorithm.Evaluation = StartEvaluation;
 
-        if (ElitistSelection)
+        selectionType = ElitistSelection;
+
+        switch (ElitistSelection)
         {
-            //Second configuration
-            geneticAlgorithm.Selection = GeneticAlgorithm.DefaultSelectionOperator;
-            geneticAlgorithm.Recombination = RandomRecombination;
-            geneticAlgorithm.Mutation = MutateAllButBestTwo;
+            case 1:
+                Debug.Log("Remainder stochastic sampling");
+                geneticAlgorithm.Selection = RemainderStochasticSampling;
+                geneticAlgorithm.Recombination = RandomRecombination;
+                geneticAlgorithm.Mutation = MutateAllButBestTwo;
+                break;
+            case 2:
+                Debug.Log("Simple top three selection");
+                geneticAlgorithm.Selection = GeneticAlgorithm.DefaultSelectionOperator;
+                geneticAlgorithm.Recombination = RandomRecombination;
+                geneticAlgorithm.Mutation = MutateAllButBestTwo;
+                break;
+            case 3:
+                Debug.Log("Clonal selection");
+                GeneticAlgorithm.ReceptorEditing = ReceptorEdit;
+                geneticAlgorithm.Selection = ClonalSelection;
+                geneticAlgorithm.Recombination = RandomRecombination;
+                geneticAlgorithm.Mutation = Hypermutate;
+                isCloned = false;
+                break;
+            case 4:
+                Debug.Log("Roulette wheel selection");
+                geneticAlgorithm.Selection = RouletteWheelSelection;
+                geneticAlgorithm.Recombination = RandomRecombination;
+                geneticAlgorithm.Mutation = MutateAllButBestTwo;
+                break;
+            case 5:
+                Debug.Log("Rank selection");
+                geneticAlgorithm.Selection = RankSelection;
+                geneticAlgorithm.Recombination = RandomRecombination;
+                geneticAlgorithm.Mutation = MutateAllButBestTwo;
+                break;
         }
-        else
-        {   
-            //First configuration
-            geneticAlgorithm.Selection = RemainderStochasticSampling;
-            geneticAlgorithm.Recombination = RandomRecombination;
-            geneticAlgorithm.Mutation = MutateAllButBestTwo;
-        }
-        
+
         AllAgentsDied += geneticAlgorithm.EvaluationFinished;
 
-        //Statistics
+        // Statistics
         if (SaveStatistics)
         {
             statisticsFileName = "Evaluation - " + GameStateManager.Instance.TrackName + " " + DateTime.Now.ToString("yyyy_MM_dd_HH-mm-ss");
@@ -129,7 +165,7 @@ public class EvolutionManager : MonoBehaviour
         }
         geneticAlgorithm.FitnessCalculationFinished += CheckForTrackFinished;
 
-        //Restart logic
+        // Restart logic
         if (RestartAfter > 0)
         {
             geneticAlgorithm.TerminationCriterion += CheckGenerationTermination;
@@ -139,14 +175,15 @@ public class EvolutionManager : MonoBehaviour
         geneticAlgorithm.Start();
     }
 
+    #region Test Conditions
     // Writes the starting line to the statistics file, stating all genetic algorithm parameters.
     private void WriteStatisticsFileStart()
     {
-        File.WriteAllText(statisticsFileName + ".txt", "Evaluation of a Population with size " + PopulationSize + 
+        File.WriteAllText(statisticsFileName + ".txt", "Evaluation of a Population with size " + PopulationSize +
                 ", on Track \"" + GameStateManager.Instance.TrackName + "\", using the following GA operators: " + Environment.NewLine +
                 "Selection: " + geneticAlgorithm.Selection.Method.Name + Environment.NewLine +
                 "Recombination: " + geneticAlgorithm.Recombination.Method.Name + Environment.NewLine +
-                "Mutation: " + geneticAlgorithm.Mutation.Method.Name + Environment.NewLine + 
+                "Mutation: " + geneticAlgorithm.Mutation.Method.Name + Environment.NewLine +
                 "FitnessCalculation: " + geneticAlgorithm.FitnessCalculationMethod.Method.Name + Environment.NewLine + Environment.NewLine);
     }
 
@@ -156,7 +193,7 @@ public class EvolutionManager : MonoBehaviour
         foreach (Genotype genotype in currentPopulation)
         {
             File.AppendAllText(statisticsFileName + ".txt", geneticAlgorithm.GenerationCount + "\t" + genotype.Evaluation + Environment.NewLine);
-            break; //Only write first
+            break; // Only write first
         }
     }
 
@@ -166,6 +203,18 @@ public class EvolutionManager : MonoBehaviour
         if (genotypesSaved >= SaveFirstNGenotype) return;
 
         string saveFolder = statisticsFileName + "/";
+
+        double bestFitness = 0, avgFitness = 0;
+
+        foreach (Genotype genotype in currentPopulation)
+        {
+            if (genotype.Evaluation > bestFitness) bestFitness = genotype.Evaluation;
+            avgFitness += genotype.Evaluation;
+        }
+
+        avgFitness /= PopulationSize;
+
+        Debug.Log(GenerationCount + ": " + Math.Round(bestFitness, 3) + " " + Math.Round(avgFitness, 3));
 
         foreach (Genotype genotype in currentPopulation)
         {
@@ -178,8 +227,7 @@ public class EvolutionManager : MonoBehaviour
 
                 if (genotypesSaved >= SaveFirstNGenotype) return;
             }
-            else
-                return; //List should be sorted, so we can exit here
+            else return; // List should be sorted, so we can exit here
         }
     }
 
@@ -206,7 +254,7 @@ public class EvolutionManager : MonoBehaviour
     // Starts the evaluation by first creating new agents from the current population and then restarting the track manager.
     private void StartEvaluation(IEnumerable<Genotype> currentPopulation)
     {
-        //Create new agents from currentPopulation
+        // Create new agents from currentPopulation
         agents.Clear();
         AgentsAliveCount = 0;
 
@@ -239,26 +287,27 @@ public class EvolutionManager : MonoBehaviour
         if (AgentsAliveCount == 0 && AllAgentsDied != null)
             AllAgentsDied();
     }
+    #endregion
 
     #region GA Operators
     // Selection operator for the genetic algorithm, using a method called remainder stochastic sampling.
     private List<Genotype> RemainderStochasticSampling(List<Genotype> currentPopulation)
     {
         List<Genotype> intermediatePopulation = new List<Genotype>();
-        //Put integer portion of genotypes into intermediatePopulation
-        //Assumes that currentPopulation is already sorted
+        // Put integer portion of genotypes into intermediatePopulation
+        // Assumes that currentPopulation is already sorted
         foreach (Genotype genotype in currentPopulation)
         {
             if (genotype.Fitness < 1)
                 break;
             else
             {
-                for (int i = 0; i < (int) genotype.Fitness; i++)
+                for (int i = 0; i < (int)genotype.Fitness; i++)
                     intermediatePopulation.Add(new Genotype(genotype.GetParameterCopy()));
             }
         }
 
-        //Put remainder portion of genotypes into intermediatePopulation
+        // Put remainder portion of genotypes into intermediatePopulation
         foreach (Genotype genotype in currentPopulation)
         {
             float remainder = genotype.Fitness - (int)genotype.Fitness;
@@ -272,19 +321,18 @@ public class EvolutionManager : MonoBehaviour
     // Recombination operator for the genetic algorithm, recombining random genotypes of the intermediate population
     private List<Genotype> RandomRecombination(List<Genotype> intermediatePopulation, uint newPopulationSize)
     {
-        //Check arguments
+        // Check arguments
         if (intermediatePopulation.Count < 2)
             throw new System.ArgumentException("The intermediate population has to be at least of size 2 for this operator.");
 
         List<Genotype> newPopulation = new List<Genotype>();
-        //Always add best two (unmodified)
+        // Always add best two (unmodified)
         newPopulation.Add(intermediatePopulation[0]);
         newPopulation.Add(intermediatePopulation[1]);
 
-
         while (newPopulation.Count < newPopulationSize)
         {
-            //Get two random indices that are not the same
+            // Get two random indices that are not the same
             int randomIndex1 = randomizer.Next(0, intermediatePopulation.Count), randomIndex2;
             do
             {
@@ -292,7 +340,7 @@ public class EvolutionManager : MonoBehaviour
             } while (randomIndex2 == randomIndex1);
 
             Genotype offspring1, offspring2;
-            GeneticAlgorithm.CompleteCrossover(intermediatePopulation[randomIndex1], intermediatePopulation[randomIndex2], 
+            GeneticAlgorithm.CompleteCrossover(intermediatePopulation[randomIndex1], intermediatePopulation[randomIndex2],
                 GeneticAlgorithm.DefCrossSwapProb, out offspring1, out offspring2);
 
             newPopulation.Add(offspring1);
@@ -322,7 +370,86 @@ public class EvolutionManager : MonoBehaviour
                 GeneticAlgorithm.MutateGenotype(genotype, GeneticAlgorithm.DefMutationProb, GeneticAlgorithm.DefMutationAmount);
         }
     }
-    #endregion
-    #endregion
 
+    private List<Genotype> RouletteWheelSelection(List<Genotype> currentPopulation)
+    {
+        List<Genotype> intermediatePopulation = new List<Genotype>();
+
+        float totalSum = 0;
+
+        for (int i = 0; i < PopulationSize / 2; i++)
+            totalSum += currentPopulation[i].Fitness;
+
+        while (intermediatePopulation.Count < PopulationSize)
+        {
+            double randomDouble = totalSum * randomizer.NextDouble();
+
+            float fitnessSum = 0;
+
+            foreach (Genotype genotype in currentPopulation)
+            {
+                fitnessSum += genotype.Fitness;
+                if (fitnessSum > randomDouble)
+                {
+                    intermediatePopulation.Add(new Genotype(genotype.GetParameterCopy()));
+                    break;
+                }
+            }
+        }
+
+        return intermediatePopulation;
     }
+
+    private List<Genotype> RankSelection(List<Genotype> currentPopulation)
+    {
+        List<Genotype> intermediatePopulation = new List<Genotype>();
+
+        double[] selectionDistribution = new double[4];
+        selectionDistribution[0] = 0.6;
+        selectionDistribution[1] = 0.3;
+        selectionDistribution[2] = 0.1;
+        selectionDistribution[3] = 0.0;
+
+        while (intermediatePopulation.Count < PopulationSize)
+        {
+            double randDouble = randomizer.NextDouble();
+
+            for (int i = 0; i < selectionDistribution.Length; i++)
+            {
+                if (randDouble > selectionDistribution[i])
+                {
+                    intermediatePopulation.Add(currentPopulation[i]);
+                    break;
+                }
+            }
+        }
+
+        return intermediatePopulation;
+    }
+
+    // First selection operator for clonal selection
+    private List<Genotype> ClonalSelection(List<Genotype> currentPopulation)
+    {
+        List<Genotype> clonalPopulation = new List<Genotype>();
+
+        // Changed
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 10; j++)
+                clonalPopulation.Add(new Genotype(currentPopulation[i].GetParameterCopy()));
+
+
+        return clonalPopulation;
+    }
+
+    // Hypermutate
+    private void Hypermutate(List<Genotype> clonalPopulation)
+    {
+        foreach (Genotype genotype in clonalPopulation)
+        {
+            if (randomizer.NextDouble() < GeneticAlgorithm.DefMutationPerc)
+                GeneticAlgorithm.MutateGenotype(genotype, GeneticAlgorithm.DefMutationProb, GeneticAlgorithm.DefMutationAmount);
+        }
+    }
+    #endregion
+    #endregion
+}

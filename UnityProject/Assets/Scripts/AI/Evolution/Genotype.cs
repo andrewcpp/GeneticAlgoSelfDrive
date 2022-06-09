@@ -12,16 +12,14 @@ using System.Text;
 /// <summary>
 /// Class representing one member of a population
 /// </summary>
-public class Genotype : IComparable<Genotype>, IEnumerable<float>
-{
+public class Genotype : IComparable<Genotype>, IEnumerable<float> {
     #region Members
-    private static Random randomizer = new Random();
+    private static Random randomizer = new Random(29835);
 
     /// <summary>
     /// The current evaluation of this genotype.
     /// </summary>
-    public float Evaluation
-    {
+    public float Evaluation {
         get;
         set;
     }
@@ -29,8 +27,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// The current fitness (e.g, the evaluation of this genotype relative 
     /// to the average evaluation of the whole population) of this genotype.
     /// </summary>
-    public float Fitness
-    {
+    public float Fitness {
         get;
         set;
     }
@@ -41,18 +38,15 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// <summary>
     /// The amount of parameters stored in the parameter vector of this genotype.
     /// </summary>
-    public int ParameterCount
-    {
-        get
-        {
+    public int ParameterCount {
+        get {
             if (parameters == null) return 0;
             return parameters.Length;
         }
     }
 
     // Overridden indexer for convenient parameter access.
-    public float this[int index]
-    {
+    public float this[int index] {
         get { return parameters[index]; }
         set { parameters[index] = value; }
     }
@@ -63,8 +57,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// Instance of a new genotype with given parameter vector and initial fitness of 0.
     /// </summary>
     /// <param name="parameters">The parameter vector to initialise this genotype with.</param>
-    public Genotype(float[] parameters)
-    {
+    public Genotype(float[] parameters) {
         this.parameters = parameters;
         Fitness = 0;
     }
@@ -77,8 +70,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// </summary>
     /// <param name="other">The genotype to compare this genotype with.</param>
     /// <returns>The result of comparing the two floating point values representing the genotypes fitness in reverse order.</returns>
-    public int CompareTo(Genotype other)
-    {
+    public int CompareTo(Genotype other) {
         return other.Fitness.CompareTo(this.Fitness); //in reverse order for larger fitness being first in list
     }
     #endregion
@@ -87,8 +79,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// <summary>
     /// Gets an Enumerator to iterate over all parameters of this genotype.
     /// </summary>
-    public IEnumerator<float> GetEnumerator()
-    {
+    public IEnumerator<float> GetEnumerator() {
         for (int i = 0; i < parameters.Length; i++)
             yield return parameters[i];
     }
@@ -96,8 +87,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// <summary>
     /// Gets an Enumerator to iterate over all parameters of this genotype.
     /// </summary>
-    IEnumerator IEnumerable.GetEnumerator()
-    {
+    IEnumerator IEnumerable.GetEnumerator() {
         for (int i = 0; i < parameters.Length; i++)
             yield return parameters[i];
     }
@@ -108,22 +98,20 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// </summary>
     /// <param name="minValue">The minimum inclusive value a parameter may be initialised with.</param>
     /// <param name="maxValue">The maximum exclusive value a parameter may be initialised with.</param>
-    public void SetRandomParameters(float minValue, float maxValue)
-    {
-        //Check arguments
+    public void SetRandomParameters(float minValue, float maxValue) {
+        // Check arguments
         if (minValue > maxValue) throw new ArgumentException("Minimum value may not exceed maximum value.");
 
-        //Generate random parameter vector
+        // Generate random parameter vector
         float range = maxValue - minValue;
         for (int i = 0; i < parameters.Length; i++)
-            parameters[i] = (float)((randomizer.NextDouble() * range) + minValue); //Create a random float between minValue and maxValue
+            parameters[i] = (float)((randomizer.NextDouble() * range) + minValue); // Create a random float between minValue and maxValue
     }
 
     /// <summary>
     /// Returns a copy of the parameter vector.
     /// </summary>
-    public float[] GetParameterCopy()
-    {
+    public float[] GetParameterCopy() {
         float[] copy = new float[ParameterCount];
         for (int i = 0; i < ParameterCount; i++)
             copy[i] = parameters[i];
@@ -136,8 +124,7 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// </summary>
     /// <param name="filePath">The path of the file to save this genotype to.</param>
     /// <remarks>This method will override existing files or attempt to create new files, if the file at given file path does not exist.</remarks>
-    public void SaveToFile(string filePath)
-    {
+    public void SaveToFile(string filePath) {
         StringBuilder builder = new StringBuilder();
         foreach (float param in parameters)
             builder.Append(param.ToString()).Append(";");
@@ -155,9 +142,8 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// <param name="minValue">The minimum inclusive value a parameter may be initialised with.</param>
     /// <param name="maxValue">The maximum exclusive value a parameter may be initialised with.</param>
     /// <returns>A genotype with random parameter values</returns>
-    public static Genotype GenerateRandom(uint parameterCount, float minValue, float maxValue)
-    {
-        //Check arguments
+    public static Genotype GenerateRandom(uint parameterCount, float minValue, float maxValue) {
+        // Check arguments
         if (parameterCount == 0) return new Genotype(new float[0]);
 
         Genotype randomGenotype = new Genotype(new float[parameterCount]);
@@ -171,15 +157,13 @@ public class Genotype : IComparable<Genotype>, IEnumerable<float>
     /// </summary>
     /// <param name="filePath">The path of the file to load the genotype from.</param>
     /// <returns>The genotype loaded from the file at given file path.</returns>
-    public static Genotype LoadFromFile(string filePath)
-    {
+    public static Genotype LoadFromFile(string filePath) {
         string data = File.ReadAllText(filePath);
 
         List<float> parameters = new List<float>();
         string[] paramStrings = data.Split(';');
 
-        foreach (string parameter in paramStrings)
-        {
+        foreach (string parameter in paramStrings) {
             float parsed;
             if (!float.TryParse(parameter, out parsed)) throw new ArgumentException("The file at given file path does not contain a valid genotype serialisation.");
             parameters.Add(parsed);

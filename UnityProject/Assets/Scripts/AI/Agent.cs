@@ -69,19 +69,19 @@ public class Agent : IComparable<Agent>
         foreach (NeuralLayer layer in FNN.Layers)
             layer.NeuronActivationFunction = defaultActivation;
 
-        //Check if topology is valid
+        // Check if topology is valid
         if (FNN.WeightCount != genotype.ParameterCount)
             throw new ArgumentException("The given genotype's parameter count must match the neural network topology's weight count.");
 
-        //Construct FNN from genotype
+        // Construct FNN from genotype
         IEnumerator<float> parameters = genotype.GetEnumerator();
-        foreach (NeuralLayer layer in FNN.Layers) //Loop over all layers
-        {
-            for (int i = 0; i < layer.Weights.GetLength(0); i++) //Loop over all nodes of current layer
-            {
-                for (int j = 0; j < layer.Weights.GetLength(1); j++) //Loop over all nodes of next layer
-                {
-                    layer.Weights[i,j] = parameters.Current;
+        foreach (NeuralLayer layer in FNN.Layers)
+        { // Loop over all layers
+            for (int i = 0; i < layer.Weights.GetLength(0); i++)
+            { // Loop over all nodes of current layer
+                for (int j = 0; j < layer.Weights.GetLength(1); j++)
+                { // Loop over all nodes of next layer
+                    layer.Weights[i, j] = parameters.Current;
                     parameters.MoveNext();
                 }
             }

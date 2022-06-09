@@ -56,14 +56,14 @@ public class UISimulationController : MonoBehaviour
     {
         if (Target != null)
         {
-            //Display controls
+            // Display controls
             if (Target.CurrentControlInputs != null)
             {
                 for (int i = 0; i < InputTexts.Length; i++)
                     InputTexts[i].text = Target.CurrentControlInputs[i].ToString();
             }
 
-            //Display evaluation and generation count
+            // Display evaluation and generation count
             Evaluation.text = Target.Agent.Genotype.Evaluation.ToString();
             GenerationCount.text = EvolutionManager.Instance.GenerationCount.ToString();
         }

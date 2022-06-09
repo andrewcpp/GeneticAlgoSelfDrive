@@ -9,17 +9,15 @@ using UnityEngine;
 /// Class representing a controlling container for a 2D physical simulation
 /// of a car with 5 front facing sensors, detecting the distance to obstacles.
 /// </summary>
-public class CarController : MonoBehaviour
-{
+public class CarController : MonoBehaviour {
     #region Members
     #region IDGenerator
     // Used for unique ID generation
     private static int idGenerator = 0;
-    /// <summary>
+    /// <summary>i
     /// Returns the next unique id in the sequence.
     /// </summary>
-    private static int NextID
-    {
+    private static int NextID {
         get { return idGenerator++; }
     }
     #endregion
@@ -30,14 +28,12 @@ public class CarController : MonoBehaviour
     /// <summary>
     /// The underlying AI agent of this car.
     /// </summary>
-    public Agent Agent
-    {
+    public Agent Agent {
         get;
         set;
     }
 
-    public float CurrentCompletionReward
-    {
+    public float CurrentCompletionReward {
         get { return Agent.Genotype.Evaluation; }
         set { Agent.Genotype.Evaluation = value; }
     }
@@ -50,8 +46,7 @@ public class CarController : MonoBehaviour
     /// <summary>
     /// The movement component of this car.
     /// </summary>
-    public CarMovement Movement
-    {
+    public CarMovement Movement {
         get;
         private set;
     }
@@ -59,16 +54,14 @@ public class CarController : MonoBehaviour
     /// <summary>
     /// The current inputs for controlling the CarMovement component.
     /// </summary>
-    public double[] CurrentControlInputs
-    {
+    public double[] CurrentControlInputs {
         get { return Movement.CurrentInputs; }
     }
 
     /// <summary>
     /// The cached SpriteRenderer of this car.
     /// </summary>
-    public SpriteRenderer SpriteRenderer
-    {
+    public SpriteRenderer SpriteRenderer {
         get;
         private set;
     }
@@ -78,18 +71,17 @@ public class CarController : MonoBehaviour
     #endregion
 
     #region Constructors
-    void Awake()
-    {
-        //Cache components
+    void Awake() {
+        // Cache components
         Movement = GetComponent<CarMovement>();
         SpriteRenderer = GetComponent<SpriteRenderer>();
         sensors = GetComponentsInChildren<Sensor>();
     }
-    void Start()
-    {
+
+    void Start() {
         Movement.HitWall += Die;
 
-        //Set name to be unique
+        // Set name to be unique
         this.name = "Car (" + NextID + ")";
     }
     #endregion
@@ -98,8 +90,7 @@ public class CarController : MonoBehaviour
     /// <summary>
     /// Restarts this car, making it movable again.
     /// </summary>
-    public void Restart()
-    {
+    public void Restart() {
         Movement.enabled = true;
         timeSinceLastCheckpoint = 0;
 
@@ -111,18 +102,15 @@ public class CarController : MonoBehaviour
     }
 
     // Unity method for normal update
-    void Update()
-    {
+    void Update() {
         timeSinceLastCheckpoint += Time.deltaTime;
     }
 
     // Unity method for physics update
-    void FixedUpdate()
-    {
-        //Get control inputs from Agent
-        if (!UseUserInput)
-        {
-            //Get readings from sensors
+    void FixedUpdate() {
+        // Get control inputs from Agent
+        if (!UseUserInput) {
+            // Get readings from sensors
             double[] sensorOutput = new double[sensors.Length];
             for (int i = 0; i < sensors.Length; i++)
                 sensorOutput[i] = sensors[i].Output;
@@ -131,15 +119,13 @@ public class CarController : MonoBehaviour
             Movement.SetInputs(controlInputs);
         }
 
-        if (timeSinceLastCheckpoint > MAX_CHECKPOINT_DELAY)
-        {
+        if (timeSinceLastCheckpoint > MAX_CHECKPOINT_DELAY) {
             Die();
         }
     }
 
     // Makes this car die (making it unmovable and stops the Agent from calculating the controls for the car).
-    private void Die()
-    {
+    private void Die() {
         this.enabled = false;
         Movement.Stop();
         Movement.enabled = false;
@@ -150,8 +136,7 @@ public class CarController : MonoBehaviour
         Agent.Kill();
     }
 
-    public void CheckpointCaptured()
-    {
+    public void CheckpointCaptured() {
         timeSinceLastCheckpoint = 0;
     }
     #endregion

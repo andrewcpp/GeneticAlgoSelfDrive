@@ -1,4 +1,4 @@
-﻿/// Author: Samuel Arzt
+﻿/// Author: Samuel Arzt, Andrew Chang
 /// Date: March 2017
 
 #region Includes
@@ -21,7 +21,6 @@ public class GeneticAlgorithm
     /// Default max value of initial population parameters.
     /// </summary>
     public const float DefInitParamMax = 1.0f;
-
     /// <summary>
     /// Default probability of a parameter being swapped during crossover.
     /// </summary>
@@ -30,7 +29,7 @@ public class GeneticAlgorithm
     /// <summary>
     /// Default probability of a parameter being mutated.
     /// </summary>
-    public const float DefMutationProb = 0.3f;
+    public const float DefMutationProb = 1.0f;
     /// <summary>
     /// Default amount by which parameters may be mutated.
     /// </summary>
@@ -38,7 +37,7 @@ public class GeneticAlgorithm
     /// <summary>
     /// Default percent of genotypes in a new population that are mutated.
     /// </summary>
-    public const float DefMutationPerc = 1.0f;
+    public const float DefMutationPerc = 5.0f;
     #endregion
 
     #region Operator Delegates
@@ -80,6 +79,8 @@ public class GeneticAlgorithm
     /// <param name="currentPopulation">The current population.</param>
     /// <returns>Whether the algorithm shall be terminated.</returns>
     public delegate bool CheckTerminationCriterion(IEnumerable<Genotype> currentPopulation);
+
+    // public delegate void EvaluationOperator2(IEnumerable<Genotype> clonalPopulation);
     #endregion
 
     #region Operator Methods
@@ -91,6 +92,7 @@ public class GeneticAlgorithm
     /// Method used to evaluate (or start the evaluation process of) the current population.
     /// </summary>
     public EvaluationOperator Evaluation = AsyncEvaluation;
+    // public EvaluationOperator2 ClonalEvaluation = AsyncEvaluation;
     /// <summary>
     /// Method used to calculate the fitness value of each genotype of the current population.
     /// </summary>
@@ -116,6 +118,7 @@ public class GeneticAlgorithm
     private static Random randomizer = new Random();
 
     private List<Genotype> currentPopulation;
+    private List<Genotype> storedPopulation = new List<Genotype>();
 
     /// <summary>
     /// The amount of genotypes in a population.
@@ -125,6 +128,14 @@ public class GeneticAlgorithm
         get;
         private set;
     }
+
+    /// <summary>
+    /// Number of new random genotypes to put in a new population in clonal selection
+    /// </summary>
+    /* public uint NewRandomSize {
+        get;
+        private set;
+    }*/
 
     /// <summary>
     /// The amount of generations that have already passed.
@@ -163,6 +174,8 @@ public class GeneticAlgorithm
     /// </summary>
     public event System.Action<IEnumerable<Genotype>> FitnessCalculationFinished;
 
+    public static bool ReceptorEditing = false;
+
     #endregion
 
     #region Constructors
@@ -180,8 +193,8 @@ public class GeneticAlgorithm
     public GeneticAlgorithm(uint genotypeParamCount, uint populationSize)
     {
         this.PopulationSize = populationSize;
-        //Initialise empty population
-        currentPopulation = new List<Genotype>((int) populationSize);
+        // Initialise empty population
+        currentPopulation = new List<Genotype>((int)populationSize);
         for (int i = 0; i < populationSize; i++)
             currentPopulation.Add(new Genotype(new float[genotypeParamCount]));
 
@@ -203,35 +216,145 @@ public class GeneticAlgorithm
 
     public void EvaluationFinished()
     {
-        //Calculate fitness from evaluation
+        if (EvolutionManager.selectionType == 3) ClonalSelection();
+        else DefaultGA();
+
+    }
+
+    private void ClonalSelection()
+    {
+        // UnityEngine.Debug.Log(GenerationCount);
+        if (GenerationCount % 2 == 1)
+        {
+            // UnityEngine.Debug.Log(GenerationCount + " " + currentPopulation.Count);
+            // Calculate fitness
+            FitnessCalculationMethod(currentPopulation);
+
+            if (SortPopulation)
+                currentPopulation.Sort();
+
+            if (FitnessCalculationFinished != null)
+                FitnessCalculationFinished(currentPopulation);
+
+            if (TerminationCriterion != null && TerminationCriterion(currentPopulation))
+            {
+                Terminate();
+                return;
+            }
+
+            // Generate clones
+            List<Genotype> clonalPopulation = Selection(currentPopulation);
+
+            // Hypermutate or receptor editing
+            Mutation(clonalPopulation);
+
+            // Receptor editing
+            if (ReceptorEditing)
+                Recombination(clonalPopulation, (uint)clonalPopulation.Count);
+
+            // Changed
+
+            storedPopulation.Clear();
+            storedPopulation.AddRange(currentPopulation);
+            // UnityEngine.Debug.Log("a\n");
+
+            currentPopulation.Clear();
+            currentPopulation.AddRange(clonalPopulation);
+            // UnityEngine.Debug.Log("b\n");
+
+
+            GenerationCount++;
+
+            // Reselect
+            Evaluation(currentPopulation);
+        }
+
+        else if (GenerationCount % 2 == 0)
+        {
+            // UnityEngine.Debug.Log(GenerationCount + " " + currentPopulation.Count);
+            FitnessCalculationMethod(currentPopulation);
+
+            if (SortPopulation)
+                currentPopulation.Sort();
+
+            if (FitnessCalculationFinished != null)
+                FitnessCalculationFinished(currentPopulation);
+
+            List<Genotype> intermediatePopulation = new List<Genotype>();
+            for (int i = 0; i < 15; i++)
+            {
+                intermediatePopulation.Add(currentPopulation[i]);
+            }
+
+            // Generate new random
+            // intermediatePopulation.Add(new Genotype(new float[EvolutionManager.NumberOfWeights]));
+
+            // P_{i-1}
+            for (int i = 0; intermediatePopulation.Count < PopulationSize; i++)
+            {
+                intermediatePopulation.Add(storedPopulation[i]);
+            }
+
+            // UnityEngine.Debug.Log(currentPopulation[0].Evaluation);
+
+            // Changed
+            // storedPopulation.Clear();
+            // List<Genotype> newPopulation = intermediatePopulation;
+
+            // Set current population to newly generated one and start evaluation again
+            // Changed
+            currentPopulation = intermediatePopulation;
+            GenerationCount++;
+
+            Evaluation(currentPopulation);
+        }
+    }
+
+    private void DefaultGA()
+    {
+        // Calculate fitness from evaluation
         FitnessCalculationMethod(currentPopulation);
 
-        //Sort population if flag was set
+        // Sort population if flag was set
         if (SortPopulation)
             currentPopulation.Sort();
 
-        //Fire fitness calculation finished event
+        // Fire fitness calculation finished event
         if (FitnessCalculationFinished != null)
             FitnessCalculationFinished(currentPopulation);
 
-        //Check termination criterion
+        // Check termination criterion
         if (TerminationCriterion != null && TerminationCriterion(currentPopulation))
         {
             Terminate();
             return;
         }
 
-        //Apply Selection
+        // Apply Selection
         List<Genotype> intermediatePopulation = Selection(currentPopulation);
 
-        //Apply Recombination
+        // Apply Recombination
         List<Genotype> newPopulation = Recombination(intermediatePopulation, PopulationSize);
 
-        //Apply Mutation
+        // Apply Mutation
         Mutation(newPopulation);
 
-        
-        //Set current population to newly generated one and start evaluation again
+        /*
+
+        double averageFitness = 0;
+
+        foreach (Genotype g in currentPopulation)
+        {
+            averageFitness += g.Evaluation;
+        }
+
+        averageFitness /= currentPopulation.Count;
+
+        UnityEngine.Debug.Log(GenerationCount + ": " + currentPopulation[0].Evaluation + " " + averageFitness);
+
+        */
+
+        // Set current population to newly generated one and start evaluation again
         currentPopulation = newPopulation;
         GenerationCount++;
 
@@ -246,6 +369,7 @@ public class GeneticAlgorithm
     }
 
     #region Static Methods
+
     #region Default Operators
     /// <summary>
     /// Initialises the population by setting each parameter to a random value in the default range.
@@ -253,14 +377,14 @@ public class GeneticAlgorithm
     /// <param name="population">The population to be initialised.</param>
     public static void DefaultPopulationInitialisation(IEnumerable<Genotype> population)
     {
-        //Set parameters to random values in set range
+        // Set parameters to random values in set range
         foreach (Genotype genotype in population)
             genotype.SetRandomParameters(DefInitParamMin, DefInitParamMax);
     }
 
     public static void AsyncEvaluation(IEnumerable<Genotype> currentPopulation)
     {
-        //At this point the async evaluation should be started and after it is finished EvaluationFinished should be called
+        // At this point the async evaluation should be started and after it is finished EvaluationFinished should be called
     }
 
     /// <summary>
@@ -269,7 +393,7 @@ public class GeneticAlgorithm
     /// <param name="currentPopulation">The current population.</param>
     public static void DefaultFitnessCalculation(IEnumerable<Genotype> currentPopulation)
     {
-        //First calculate average evaluation of whole population
+        // First calculate average evaluation of whole population
         uint populationSize = 0;
         float overallEvaluation = 0;
         foreach (Genotype genotype in currentPopulation)
@@ -280,7 +404,7 @@ public class GeneticAlgorithm
 
         float averageEvaluation = overallEvaluation / populationSize;
 
-        //Now assign fitness with formula fitness = evaluation / averageEvaluation
+        // Now assign fitness with formula fitness = evaluation / averageEvaluation
         foreach (Genotype genotype in currentPopulation)
             genotype.Fitness = genotype.Evaluation / averageEvaluation;
     }
@@ -293,6 +417,7 @@ public class GeneticAlgorithm
     public static List<Genotype> DefaultSelectionOperator(List<Genotype> currentPopulation)
     {
         List<Genotype> intermediatePopulation = new List<Genotype>();
+
         intermediatePopulation.Add(currentPopulation[0]);
         intermediatePopulation.Add(currentPopulation[1]);
         intermediatePopulation.Add(currentPopulation[2]);
@@ -341,22 +466,22 @@ public class GeneticAlgorithm
     #region Recombination Operators
     public static void CompleteCrossover(Genotype parent1, Genotype parent2, float swapChance, out Genotype offspring1, out Genotype offspring2)
     {
-        //Initialise new parameter vectors
+        // Initialise new parameter vectors
         int parameterCount = parent1.ParameterCount;
         float[] off1Parameters = new float[parameterCount], off2Parameters = new float[parameterCount];
 
-        //Iterate over all parameters randomly swapping
+        // Iterate over all parameters randomly swapping
         for (int i = 0; i < parameterCount; i++)
         {
             if (randomizer.Next() < swapChance)
             {
-                //Swap parameters
+                // Swap parameters
                 off1Parameters[i] = parent2[i];
                 off2Parameters[i] = parent1[i];
             }
             else
             {
-                //Don't swap parameters
+                // Don't swap parameters
                 off1Parameters[i] = parent1[i];
                 off2Parameters[i] = parent2[i];
             }
@@ -380,10 +505,10 @@ public class GeneticAlgorithm
         {
             if (randomizer.NextDouble() < mutationProb)
             {
-                //Mutate by random amount in range [-mutationAmount, mutationAmoun]
+                // Mutate by random amount in range [-mutationAmount, mutationAmoun]
                 genotype[i] += (float)(randomizer.NextDouble() * (mutationAmount * 2) - mutationAmount);
-            }    
-        } 
+            }
+        }
     }
     #endregion
     #endregion

@@ -49,14 +49,14 @@ public class NeuralNetwork
     {
         this.Topology = topology;
 
-        //Calculate overall weight count
+        // Calculate overall weight count
         WeightCount = 0;
         for (int i = 0; i < topology.Length - 1; i++)
-            WeightCount += (int) ((topology[i] + 1) * topology[i + 1]); // + 1 for bias node
+            WeightCount += (int)((topology[i] + 1) * topology[i + 1]); // + 1 for bias node
 
-        //Initialise layers
+        // Initialise layers
         Layers = new NeuralLayer[topology.Length - 1];
-        for (int i = 0; i<Layers.Length; i++)
+        for (int i = 0; i < Layers.Length; i++)
             Layers[i] = new NeuralLayer(topology[i], topology[i + 1]);
     }
     #endregion
@@ -69,17 +69,17 @@ public class NeuralNetwork
     /// <returns>The calculated outputs.</returns>
     public double[] ProcessInputs(double[] inputs)
     {
-        //Check arguments
+        // Check arguments
         if (inputs.Length != Layers[0].NeuronCount)
             throw new ArgumentException("Given inputs do not match network input amount.");
 
-        //Process inputs by propagating values through all layers
+        // Process inputs by propagating values through all layers
         double[] outputs = inputs;
         foreach (NeuralLayer layer in Layers)
             outputs = layer.ProcessInputs(outputs);
 
         return outputs;
-        
+
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ public class NeuralNetwork
     {
         string output = "";
 
-        for (int i = 0; i<Layers.Length; i++)
+        for (int i = 0; i < Layers.Length; i++)
             output += "Layer " + i + ":\n" + Layers[i].ToString();
 
         return output;
