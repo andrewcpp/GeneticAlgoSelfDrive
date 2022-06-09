@@ -1,6 +1,6 @@
 # Self-Driving Simulation with Genetic and Clonal Selection Algorithms
 
-This Unity project is a modified version of [https://github.com/ArztSamuel/Applying_EANNs](https://github.com/ArztSamuel/Applying_EANNs) to simulate clonal selection algorithms for self navigation problems. It also applies different selection schemes for preexisting genetic algorithms. Modified scripts are present in [UnityProject/Assets/Scripts/AI](UnityProject/Assets/Scripts/AI/). For a detailed description of the project, please take a look at [Research/paper.pdf](Research/paper.pdf). Below is ArztSamuel's original README modified accordingly to this research project.
+This Unity project is a modified version of [https://github.com/ArztSamuel/Applying_EANNs](https://github.com/ArztSamuel/Applying_EANNs) to simulate clonal selection algorithms for self navigation problems. It also applies different selection schemes for preexisting genetic algorithms. Modified scripts are present in [UnityProject/Assets/Scripts/AI](UnityProject/Assets/Scripts/AI/). For a detailed description of the project, please take a look at [paper/paper.pdf](paper/paper.pdf). Below is ArztSamuel's original README modified accordingly to this research project.
 
 ## Introduction: Applying Evolutionary Artificial Neural Networks
 
